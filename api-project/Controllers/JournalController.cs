@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api_project.Controllers
@@ -7,43 +8,23 @@ namespace api_project.Controllers
     [ApiController]
     public class JournalController : ControllerBase
     {
-        private static List<Journal> journal = new List<Journal>
-            {
-               new Journal {
-                    Id = 1,
-                    Name = "Test",
-                    Title = "Test",
-                    Description = "Test",
-                    Place = "Test",
-                },
+        private readonly DataContext context;
 
-               new Journal {
-                    Id = 2,
-                    Name = "Cora Rose Marlow",
-                    Title = "Truth",
-                    Description = "The One",
-                    Place = "My Heart",
-                },
-
-               new Journal {
-                    Id = 3,
-                    Name = "Who",
-                    Title = "Why",
-                    Description = "What",
-                    Place = "How",
-                }
-            };
+        public JournalController(DataContext context)
+        {
+            this.context = context;
+        }
 
         [HttpGet]
         public async Task<ActionResult<List<Journal>>> Get() 
         {
-            return Ok(journal);
+            return Ok(await this.context.JournalEntries.ToListAsync());
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Journal>> Get(int id)
         {
-            var entry = journal.Find(h => h.Id == id);
+            var entry = await this.context.JournalEntries.FindAsync(id);
             if (entry == null)
                 return BadRequest("Entry not found");
             return Ok(entry);
@@ -52,38 +33,44 @@ namespace api_project.Controllers
         [HttpPost]
         public async Task<ActionResult<List<Journal>>> AddEntry(Journal entry)
         {
-            journal.Add(entry);
-            return Ok(journal);
+            this.context.JournalEntries.Add(entry);
+            await this.context.SaveChangesAsync();
+
+            return Ok(await this.context.JournalEntries.ToListAsync());
         }
 
         [HttpPut]
         public async Task<ActionResult<List<Journal>>> UpdateEntry(Journal request)
         {
-            var entry = journal.Find(h => h.Id == request.Id);
-            if (entry == null)
+            var dbEntry = await this.context.JournalEntries.FindAsync(request.Id);
+            if (dbEntry == null)
             {
                 return BadRequest("Entry not found");
             }
 
-            entry.Name = request.Name;
-            entry.Title = request.Title;
-            entry.Description = request.Description;
-            entry.Place = request.Place;
+            dbEntry.Name = request.Name;
+            dbEntry.Title = request.Title;
+            dbEntry.Description = request.Description;
+            dbEntry.Place = request.Place;
 
-            return Ok(journal);
+            await this.context.SaveChangesAsync();
+
+            return Ok(await this.context.JournalEntries.ToListAsync());
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult<List<Journal>>> Delete(int id)
         {
-            var entry = journal.Find(h => h.Id == id);
-            if (entry == null)
+            var dbEntry = await this.context.JournalEntries.FindAsync(id);
+            if (dbEntry == null)
             {
                 return BadRequest("Entry not found");
-            }  
+            }
 
-            journal.Remove(entry);
-            return Ok(journal);
+            this.context.JournalEntries.Remove(dbEntry);
+            await this.context.SaveChangesAsync();
+
+            return Ok(await this.context.JournalEntries.ToListAsync());
         }
     }
 }
