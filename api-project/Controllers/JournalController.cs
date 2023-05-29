@@ -1,4 +1,5 @@
 ﻿using Azure.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,6 +7,7 @@ namespace api_project.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class JournalController : ControllerBase
     {
         private readonly DataContext context;
@@ -15,7 +17,7 @@ namespace api_project.Controllers
             this.context = context;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<Journal>>> Get() 
         {
             return Ok(await this.context.JournalEntries.ToListAsync());
@@ -30,7 +32,7 @@ namespace api_project.Controllers
             return Ok(entry);
         }
 
-        [HttpPost]
+        [HttpPost, Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<Journal>>> AddEntry(Journal entry)
         {
             this.context.JournalEntries.Add(entry);
@@ -39,7 +41,7 @@ namespace api_project.Controllers
             return Ok(await this.context.JournalEntries.ToListAsync());
         }
 
-        [HttpPut]
+        [HttpPut, Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<Journal>>> UpdateEntry(Journal request)
         {
             var dbEntry = await this.context.JournalEntries.FindAsync(request.Id);
@@ -58,7 +60,7 @@ namespace api_project.Controllers
             return Ok(await this.context.JournalEntries.ToListAsync());
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id}"), Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<Journal>>> Delete(int id)
         {
             var dbEntry = await this.context.JournalEntries.FindAsync(id);
